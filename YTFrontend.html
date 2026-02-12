@@ -83,8 +83,8 @@ async function playVideo(video) {
 // ---------------- SEARCH ----------------
 async function searchVideos(query) {
     try {
-        // CORS proxy in front of Piped API
-        const url = `https://corsproxy.io/?${encodeURIComponent(config.API + 'search?q=' + query + '&type=videos')}`;
+        const proxyUrl = "https://api.allorigins.win/raw?url=";
+        const url = proxyUrl + encodeURIComponent(config.API + 'search?q=' + query + '&type=videos');
         const res = await fetch(url);
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
