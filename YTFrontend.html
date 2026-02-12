@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Invidious Hybrid Player</title>
-<meta name="referrer" content="no-referrer">
+<title>Watch</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 html,body{
@@ -11,58 +12,75 @@ html,body{
   height:100%;
   background:#0b0b0b;
   color:#eee;
-  font-family:system-ui, Segoe UI, Roboto;
+  font-family:system-ui,Segoe UI,Roboto;
 }
-
 .app{
   display:grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-rows:56px 1fr;
   height:100%;
 }
-
-/* Invidious UI panel */
-#ui{
-  border-right:1px solid #222;
+header{
+  background:#111;
+  border-bottom:1px solid #222;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  font-weight:600;
 }
-
-/* Player panel */
-#player{
-  background:#000;
-}
-
 iframe{
   width:100%;
   height:100%;
   border:0;
+  background:black;
 }
-
-/* Hide Invidious video, keep UI */
-#ui{
-  filter:brightness(0);
-  pointer-events:auto;
+footer{
+  background:#0f0f0f;
+  border-top:1px solid #222;
+  padding:6px;
+  display:flex;
+  gap:6px;
 }
+button{
+  background:#1a1a1a;
+  color:#eee;
+  border:1px solid #333;
+  padding:6px 10px;
+  cursor:pointer;
+}
+button:hover{ background:#222 }
 </style>
 </head>
-<body>
 
+<body>
 <div class="app">
 
-  <!-- Invidious UI (nerdvpn.de) -->
-  <iframe
-    id="ui"
-    src="https://invidious.nerdvpn.de/watch?v=hgYhws0AHcg"
-    sandbox="allow-scripts allow-same-origin allow-popups"
-  ></iframe>
+<header>▶ Watch</header>
 
-  <!-- Actual working video playback -->
-  <iframe
-    id="player"
-    src="https://www.youtube-nocookie.com/embed/hgYhws0AHcg?autoplay=1&rel=0&modestbranding=1"
-    allow="autoplay; fullscreen"
-    allowfullscreen
-  ></iframe>
+<iframe
+  id="player"
+  allow="autoplay; fullscreen; picture-in-picture"
+  referrerpolicy="no-referrer"
+  sandbox="allow-scripts allow-same-origin allow-presentation">
+</iframe>
+
+<footer>
+  <button onclick="load('invidious.nerdvpn.de')">nerdvpn</button>
+  <button onclick="load('yewtu.be')">yewtu</button>
+  <button onclick="load('iv.ggtyler.dev')">ggtyler</button>
+</footer>
 
 </div>
+
+<script>
+const VIDEO_ID = "hgYhws0AHcg";
+
+function load(host){
+  document.getElementById("player").src =
+    `https://${host}/embed/${VIDEO_ID}`;
+}
+
+load("invidious.nerdvpn.de");
+</script>
 
 </body>
 </html>
