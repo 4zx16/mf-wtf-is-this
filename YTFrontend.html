@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Invidious Search (Proxied)</title>
+<title>Invidious Search + Embed</title>
 
 <style>
 body{
@@ -20,27 +20,26 @@ header{
 .searchbar{
   display:flex;
   justify-content:center;
+  gap:.5rem;
   margin:1rem;
 }
 .searchbar input{
   width:50%;
   padding:.6rem;
   border:none;
-  border-radius:6px 0 0 6px;
-  font-size:1rem;
+  border-radius:6px;
 }
 .searchbar button{
   padding:.6rem 1rem;
   border:none;
-  border-radius:0 6px 6px 0;
+  border-radius:6px;
   background:#ff5c57;
   color:#fff;
-  font-size:1rem;
   cursor:pointer;
 }
 iframe{
   width:95%;
-  height:80vh;
+  height:40vh;
   display:block;
   margin:1rem auto;
   border:none;
@@ -53,36 +52,43 @@ iframe{
 <body>
 
 <header>
-  <h1>Invidious Search</h1>
+  <h1>Invidious Search + Player</h1>
 </header>
 
-<div class="searchbar">
-  <input id="query" placeholder="Search YouTube…" autocomplete="off">
-  <button id="searchBtn">Search</button>
-</div>
+<!-- SEARCH (HTML NAVIGATION, NO JS FETCH) -->
+<form
+  class="searchbar"
+  method="GET"
+  action="https://invidious.nerdvpn.de/search"
+  target="searchFrame">
+  <input name="q" placeholder="Search YouTube…" required>
+  <button type="submit">Search</button>
+</form>
 
+<!-- SEARCH RESULTS -->
 <iframe
-  id="searchFrame"
+  name="searchFrame"
   sandbox="allow-scripts allow-forms allow-same-origin allow-popups">
 </iframe>
 
+<!-- PLAYER -->
+<iframe
+  id="player"
+  allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
+  allowfullscreen>
+</iframe>
+
 <script>
-const INSTANCE = "https://invidious.nerdvpn.de"
-const PROXY = "https://api.allorigins.win/raw?url="
-
-const frame = document.getElementById("searchFrame")
-const input = document.getElementById("query")
-
-function search(){
-  const q = input.value.trim()
-  if(!q) return
-
-  const target = `${INSTANCE}/search?q=${encodeURIComponent(q)}`
-  frame.src = PROXY + encodeURIComponent(target)
+/*
+  This does NOT scrape.
+  It just lets users click results.
+  Invidious /watch links open in the same iframe,
+  user clicks → copy video ID → paste below if needed.
+*/
+function play(id){
+  document.getElementById("player").src =
+    "https://invidious.nerdvpn.de/embed/" + id
 }
-
-document.getElementById("searchBtn").onclick = search
-input.onkeydown = e => { if(e.key==="Enter") search() }
 </script>
 
 </body>
