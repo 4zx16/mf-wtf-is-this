@@ -29,99 +29,96 @@ button { background:#bb86fc; color:#121212; font-weight:bold; cursor:pointer; }
 <div id="resultsContainer"></div>
 
 <script type="module">
-export const config = {
-  videoAPI: "https://piped.video/",
-  sponsorBlock: "https://sponsor.ajay.app/",
-  pipedAPI: "https://pipedapi.kavin.rocks/api/v1/"
-};
+// ---------------- IMPORT CONFIG ----------------
+import { config } from './config.js'; // fetch config dynamically
 
+// ---------------- ELEMENTS ----------------
 const searchInput = document.getElementById('searchInput');
 const searchButton = document.getElementById('searchButton');
 const resultsContainer = document.getElementById('resultsContainer');
 const html5Player = document.getElementById('html5Player');
 
+// ---------------- STATE ----------------
 let sponsorSegments = [];
 let skipInterval;
 
-// -------------------- SPONSORBLOCK --------------------
+// ---------------- SPONSORBLOCK ----------------
 async function fetchSponsorSegments(videoId) {
-  try {
-    const res = await fetch(`${config.sponsorBlock}/api/skipSegments?videoID=${videoId}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const segments = await res.json();
-    sponsorSegments = segments.sort((a,b)=>a.segment[0]-b.segment[0]);
-  } catch (err) {
-    console.warn('SponsorBlock fetch failed:', err);
-    sponsorSegments = [];
-  }
-}
-
-// -------------------- AUTO-SKIP --------------------
-function startAutoSkip() {
-  if (skipInterval) clearInterval(skipInterval);
-  skipInterval = setInterval(() => {
-    if (!html5Player || !sponsorSegments.length) return;
-    const t = html5Player.currentTime;
-    for (let seg of sponsorSegments) {
-      const [start, end] = seg.segment;
-      if (t >= start && t < end) {
-        html5Player.currentTime = end + 0.01;
-        break;
-      }
+    try {
+        const res = await fetch(`${config.sponsorBlock}/api/skipSegments?videoID=${videoId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const segments = await res.json();
+        sponsorSegments = segments.sort((a,b)=>a.segment[0]-b.segment[0]);
+    } catch(err) {
+        console.warn('SponsorBlock fetch failed:', err);
+        sponsorSegments = [];
     }
-  }, 200);
 }
 
-// -------------------- VIDEO PLAYER --------------------
+// ---------------- AUTO-SKIP ----------------
+function startAutoSkip() {
+    if(skipInterval) clearInterval(skipInterval);
+    skipInterval = setInterval(() => {
+        if(!html5Player || !sponsorSegments.length) return;
+        const t = html5Player.currentTime;
+        for(const seg of sponsorSegments) {
+            const [start, end] = seg.segment;
+            if(t >= start && t < end) {
+                html5Player.currentTime = end + 0.01;
+                break;
+            }
+        }
+    }, 200);
+}
+
+// ---------------- PLAY VIDEO ----------------
 async function playVideo(video) {
-  const vid = video.id;
-  await fetchSponsorSegments(vid);
-  html5Player.src = `${config.videoAPI}watch?v=${vid}`;
-  html5Player.play();
-  startAutoSkip();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    await fetchSponsorSegments(video.id);
+    html5Player.src = `${config.UI}watch?v=${video.id}`;
+    html5Player.play();
+    startAutoSkip();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// -------------------- SEARCH --------------------
+// ---------------- SEARCH ----------------
 async function searchVideos(query) {
-  try {
-    const res = await fetch(`${config.pipedAPI}search?q=${encodeURIComponent(query)}&type=videos`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data.items || data || [];
-  } catch (err) {
-    console.error('Search failed:', err);
-    resultsContainer.innerHTML = `<p>Error fetching videos: ${err.message}</p>`;
-    return [];
-  }
+    try {
+        const res = await fetch(`${config.API}search?q=${encodeURIComponent(query)}&type=videos`);
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        return data.items || data || [];
+    } catch(err) {
+        console.error('Search failed:', err);
+        resultsContainer.innerHTML = `<p>Error fetching videos: ${err.message}</p>`;
+        return [];
+    }
 }
 
+// ---------------- RENDER ----------------
 function renderResults(videos) {
-  resultsContainer.innerHTML = '';
-  if (!videos.length) {
-    resultsContainer.innerHTML = '<p>No results found.</p>';
-    return;
-  }
+    resultsContainer.innerHTML = '';
+    if(!videos.length) {
+        resultsContainer.innerHTML = '<p>No results found.</p>';
+        return;
+    }
 
-  videos.forEach(video => {
-    const vid = video.id;
-    const title = video.title;
-    const thumb = video.thumbnailUrl || video.thumbnails?.[0]?.url;
-
-    const div = document.createElement('div');
-    div.className = 'video';
-    div.innerHTML = `<img src="${thumb}" alt="${title}"><div class="info"><h3>${title}</h3></div>`;
-    div.onclick = () => playVideo(video);
-    resultsContainer.appendChild(div);
-  });
+    videos.forEach(video => {
+        const thumb = video.thumbnailUrl || video.thumbnails?.[0]?.url;
+        const div = document.createElement('div');
+        div.className = 'video';
+        div.innerHTML = `<img src="${thumb}" alt="${video.title}"><div class="info"><h3>${video.title}</h3></div>`;
+        div.onclick = () => playVideo(video);
+        resultsContainer.appendChild(div);
+    });
 }
 
+// ---------------- EVENT ----------------
 searchButton.onclick = async () => {
-  const q = searchInput.value.trim();
-  if (!q) return;
-  resultsContainer.innerHTML = '<p>Loading…</p>';
-  const videos = await searchVideos(q);
-  renderResults(videos);
+    const q = searchInput.value.trim();
+    if(!q) return;
+    resultsContainer.innerHTML = '<p>Loading…</p>';
+    const videos = await searchVideos(q);
+    renderResults(videos);
 };
 </script>
 
