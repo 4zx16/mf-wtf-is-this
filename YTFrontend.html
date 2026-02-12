@@ -5,16 +5,16 @@
 <title>Krynet, LLC | Watch Together</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { background:#121212; color:#eee; font-family: Arial, sans-serif; padding: 1rem; }
-#resultsContainer { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 1rem; margin-top: 1rem; }
-.video { cursor: pointer; background: #222; border-radius: 8px; overflow:hidden; transition: transform 0.2s; }
+body { background:#121212; color:#eee; font-family: Arial, sans-serif; padding:1rem; }
+#resultsContainer { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:1rem; margin-top:1rem; }
+.video { cursor:pointer; background:#222; border-radius:8px; overflow:hidden; transition: transform 0.2s; }
 .video:hover { transform: scale(1.02); }
-.video img { width: 100%; display: block; }
-.info { padding: 0.5rem; }
-input, button { font-size: 1rem; padding: .5rem 1rem; border-radius: 9999px; border: none; }
-input { width: 60%; background:#222; color:#eee; }
+.video img { width:100%; display:block; }
+.info { padding:0.5rem; }
+input, button { font-size:1rem; padding:.5rem 1rem; border-radius:9999px; border:none; }
+input { width:60%; background:#222; color:#eee; }
 button { background:#bb86fc; color:#121212; font-weight:bold; cursor:pointer; }
-#playerContainer { margin-top: 1rem; position:relative; }
+#playerContainer { margin-top:1rem; position:relative; }
 iframe { width:100%; height:360px; border:none; border-radius:12px; }
 </style>
 </head>
@@ -41,9 +41,9 @@ let skipInterval = null;
 async function fetchSponsorSegments(videoId) {
     try {
         const res = await fetch(`${config.sponsorBlock}/api/skipSegments?videoID=${videoId}`);
-        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const segments = await res.json();
-        sponsorSegments = segments.sort((a,b)=>a.segment[0]-b.segment[0]);
+        sponsorSegments = segments.sort((a,b) => a.segment[0] - b.segment[0]);
     } catch(err) {
         console.warn('SponsorBlock fetch failed:', err);
         sponsorSegments = [];
@@ -52,11 +52,12 @@ async function fetchSponsorSegments(videoId) {
 
 function startAutoSkip() {
     if(skipInterval) clearInterval(skipInterval);
-    const iframe = document.querySelector('#playerContainer iframe');
+    const iframe = playerContainer.querySelector('iframe');
     if(!iframe) return;
 
     skipInterval = setInterval(() => {
         try {
+            // Video element inside iframe may be cross-origin, skip safely if accessible
             const videoEl = iframe.contentWindow?.document?.querySelector('video');
             if(!videoEl || !sponsorSegments.length) return;
             const t = videoEl.currentTime;
@@ -64,9 +65,7 @@ function startAutoSkip() {
                 const [start,end] = seg.segment;
                 if(t >= start && t < end) videoEl.currentTime = end + 0.01;
             }
-        } catch(err) {
-            // cross-origin iframe video access may fail, ignore
-        }
+        } catch(err){ /* ignore cross-origin errors */ }
     }, 200);
 }
 
@@ -85,13 +84,13 @@ async function playVideo(video) {
     playerContainer.appendChild(iframe);
 
     startAutoSkip();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top:0, behavior:'smooth' });
 }
 
 // ------------------ Search ------------------
 async function searchVideos(query) {
     try {
-        const url = config.Proxy + config.API + `search?q=${encodeURIComponent(query)}&type=videos`;
+        const url = `${config.API}search?q=${encodeURIComponent(query)}&type=videos`;
         const res = await fetch(url);
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
