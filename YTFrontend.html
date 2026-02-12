@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Krynet, LLC | Watch Together</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  background: #121212;
+  background: #0f0f0f;
   color: #eee;
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 header {
-  padding: 1rem;
   display: flex;
-  gap: .5rem;
+  gap: 0.5rem;
+  padding: 1rem;
   background: #181818;
+  border-bottom: 1px solid #222;
 }
 
 input, button {
   font-size: 1rem;
-  padding: .5rem 1rem;
+  padding: 0.6rem 1rem;
   border-radius: 9999px;
   border: none;
 }
@@ -36,14 +41,14 @@ input {
 button {
   background: #bb86fc;
   color: #121212;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
 }
 
 main {
   display: grid;
-  grid-template-rows: auto 1fr;
-  height: calc(100vh - 70px);
+  grid-template-rows: 55% 45%;
+  height: calc(100vh - 72px);
 }
 
 iframe {
@@ -58,28 +63,25 @@ iframe {
 <body>
 
 <header>
-  <input id="query" placeholder="Search or paste YouTube URL…" />
+  <input id="input" placeholder="Search or paste YouTube / Piped URL…" />
   <button id="go">Go</button>
 </header>
 
 <main>
-  <!-- Player -->
   <iframe id="player"></iframe>
-
-  <!-- Search results -->
   <iframe id="search"></iframe>
 </main>
 
 <script type="module">
 import { config } from './config.js';
 
+const input = document.getElementById('input');
+const go = document.getElementById('go');
 const player = document.getElementById('player');
 const search = document.getElementById('search');
-const input = document.getElementById('query');
-const button = document.getElementById('go');
 
 /* Extract video ID safely */
-function extractID(value) {
+function getVideoID(value) {
   try {
     const url = new URL(value);
     return url.searchParams.get('v');
@@ -88,35 +90,36 @@ function extractID(value) {
   }
 }
 
-/* Load watch page */
-function play(videoId) {
+/* Load watch iframe */
+function loadVideo(videoId) {
   if (!videoId) return;
   player.src = `${config.UI}watch?v=${videoId}&autoplay=1`;
   location.hash = videoId; // Watch Together sync
 }
 
-/* Load search UI */
-function doSearch(q) {
-  search.src = `${config.UI}search?q=${encodeURIComponent(q)}`;
+/* Load search iframe */
+function loadSearch(query) {
+  search.src = `${config.UI}search?q=${encodeURIComponent(query)}`;
 }
 
-/* Handle button */
-button.onclick = () => {
+/* Handle input */
+go.onclick = () => {
   const value = input.value.trim();
   if (!value) return;
 
-  const vid = extractID(value);
-  if (vid.length >= 8) {
-    play(vid);
+  const videoId = getVideoID(value);
+
+  if (videoId && videoId.length >= 8) {
+    loadVideo(videoId);
   } else {
-    doSearch(value);
+    loadSearch(value);
   }
 };
 
-/* Watch Together via URL hash */
+/* Watch Together (hash-based) */
 function loadFromHash() {
-  const vid = location.hash.replace('#', '');
-  if (vid) play(vid);
+  const id = location.hash.replace('#', '');
+  if (id) loadVideo(id);
 }
 
 window.addEventListener('hashchange', loadFromHash);
