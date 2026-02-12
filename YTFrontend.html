@@ -35,8 +35,7 @@ const resultsContainer = document.getElementById('resultsContainer');
 const playerContainer = document.getElementById('playerContainer');
 
 let sponsorSegments = [];
-let skipInterval;
-let currentVideoId = null;
+let skipInterval = null;
 
 // ------------------ SponsorBlock ------------------
 async function fetchSponsorSegments(videoId) {
@@ -57,24 +56,23 @@ function startAutoSkip() {
     if(!iframe) return;
 
     skipInterval = setInterval(() => {
-        if(!iframe || !sponsorSegments.length) return;
-        const t = iframe.contentWindow?.document?.querySelector('video')?.currentTime;
-        if(t === undefined) return;
-        for(const seg of sponsorSegments) {
-            const [start, end] = seg.segment;
-            if(t >= start && t < end) {
-                iframe.contentWindow.document.querySelector('video').currentTime = end + 0.01;
-                break;
+        try {
+            const videoEl = iframe.contentWindow?.document?.querySelector('video');
+            if(!videoEl || !sponsorSegments.length) return;
+            const t = videoEl.currentTime;
+            for(const seg of sponsorSegments) {
+                const [start,end] = seg.segment;
+                if(t >= start && t < end) videoEl.currentTime = end + 0.01;
             }
+        } catch(err) {
+            // cross-origin iframe video access may fail, ignore
         }
     }, 200);
 }
 
 // ------------------ Play Video ------------------
 async function playVideo(video) {
-    currentVideoId = video.id;
     await fetchSponsorSegments(video.id);
-
     playerContainer.innerHTML = '';
     const iframe = document.createElement('iframe');
     iframe.src = `${config.UI}watch?v=${video.id}&autoplay=1`;
