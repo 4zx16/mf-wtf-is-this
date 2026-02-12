@@ -2,58 +2,67 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Watch Together</title>
+<title>Invidious Hybrid Player</title>
 <meta name="referrer" content="no-referrer">
+
 <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background: #0b0b0b;
-    color: white;
-    font-family: system-ui, Segoe UI, Roboto;
-  }
-  .app {
-    display: grid;
-    grid-template-rows: 56px 1fr;
-    height: 100%;
-  }
-  header {
-    display: flex;
-    align-items: center;
-    padding: 0 16px;
-    background: #111;
-    border-bottom: 1px solid #222;
-    font-weight: 600;
-  }
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: black;
-  }
+html,body{
+  margin:0;
+  height:100%;
+  background:#0b0b0b;
+  color:#eee;
+  font-family:system-ui, Segoe UI, Roboto;
+}
+
+.app{
+  display:grid;
+  grid-template-columns: 420px 1fr;
+  height:100%;
+}
+
+/* Invidious UI panel */
+#ui{
+  border-right:1px solid #222;
+}
+
+/* Player panel */
+#player{
+  background:#000;
+}
+
+iframe{
+  width:100%;
+  height:100%;
+  border:0;
+}
+
+/* Hide Invidious video, keep UI */
+#ui{
+  filter:brightness(0);
+  pointer-events:auto;
+}
 </style>
 </head>
 <body>
 
 <div class="app">
-  <header>🎬 Watch Together</header>
 
+  <!-- Invidious UI (nerdvpn.de) -->
+  <iframe
+    id="ui"
+    src="https://invidious.nerdvpn.de/watch?v=hgYhws0AHcg"
+    sandbox="allow-scripts allow-same-origin allow-popups"
+  ></iframe>
+
+  <!-- Actual working video playback -->
   <iframe
     id="player"
+    src="https://www.youtube-nocookie.com/embed/hgYhws0AHcg?autoplay=1&rel=0&modestbranding=1"
     allow="autoplay; fullscreen"
-    sandbox="allow-scripts allow-same-origin allow-presentation"
-    referrerpolicy="no-referrer"
+    allowfullscreen
   ></iframe>
+
 </div>
-
-<script>
-const VIDEO_ID = "hgYhws0AHcg";
-
-// Piped embed endpoint (this one works)
-const iframe = document.getElementById("player");
-iframe.src = `https://piped.video/embed/${VIDEO_ID}`;
-</script>
 
 </body>
 </html>
