@@ -1,91 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <title>Krynet, LLC | Watch Together</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
-body { background:#121212; color:#eee; font-family:Arial,sans-serif; padding:1rem; }
-#playerContainer { margin-top:1rem; position:relative; }
-iframe { width:100%; height:480px; border:none; border-radius:12px; }
-input, button { font-size:1rem; padding:.5rem 1rem; border-radius:9999px; border:none; }
-input { width:50%; background:#222; color:#eee; margin-right:.5rem; }
-button { background:#bb86fc; color:#121212; font-weight:bold; cursor:pointer; }
+body {
+  margin: 0;
+  background: #121212;
+  color: #eee;
+  font-family: Arial, sans-serif;
+}
+
+header {
+  padding: 1rem;
+  display: flex;
+  gap: .5rem;
+  background: #181818;
+}
+
+input, button {
+  font-size: 1rem;
+  padding: .5rem 1rem;
+  border-radius: 9999px;
+  border: none;
+}
+
+input {
+  flex: 1;
+  background: #222;
+  color: #eee;
+}
+
+button {
+  background: #bb86fc;
+  color: #121212;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+main {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: calc(100vh - 70px);
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #000;
+}
 </style>
 </head>
+
 <body>
 
-<h2>Watch Together – Paste YouTube/Piped URL</h2>
-<input type="text" id="videoInput" placeholder="Paste URL or video ID..." />
-<button id="playButton">Play</button>
+<header>
+  <input id="query" placeholder="Search or paste YouTube URL…" />
+  <button id="go">Go</button>
+</header>
 
-<div id="playerContainer"></div>
+<main>
+  <!-- Player -->
+  <iframe id="player"></iframe>
+
+  <!-- Search results -->
+  <iframe id="search"></iframe>
+</main>
 
 <script type="module">
 import { config } from './config.js';
 
-const videoInput = document.getElementById('videoInput');
-const playButton = document.getElementById('playButton');
-const playerContainer = document.getElementById('playerContainer');
+const player = document.getElementById('player');
+const search = document.getElementById('search');
+const input = document.getElementById('query');
+const button = document.getElementById('go');
 
-// Extract video ID from URL or accept raw ID
-function extractVideoID(input) {
-    try {
-        const url = new URL(input);
-        if(url.hostname.includes('youtube') || url.hostname.includes('piped') || url.hostname.includes('invidious')) {
-            return url.searchParams.get('v') || input;
-        }
-    } catch(e) {}
-    return input.trim();
+/* Extract video ID safely */
+function extractID(value) {
+  try {
+    const url = new URL(value);
+    return url.searchParams.get('v');
+  } catch {
+    return value.trim();
+  }
 }
 
-// Create iframe player
-function createPlayer(videoId, startTime = 0) {
-    playerContainer.innerHTML = '';
-    const iframe = document.createElement('iframe');
-    iframe.src = `${config.UI}watch?v=${videoId}&t=${Math.floor(startTime)}&autoplay=1`;
-    iframe.allow = 'autoplay; fullscreen';
-    iframe.frameBorder = '0';
-    iframe.loading = 'lazy';
-    iframe.style.borderRadius = '12px';
-    iframe.style.width = '100%';
-    iframe.style.height = '480px';
-    playerContainer.appendChild(iframe);
+/* Load watch page */
+function play(videoId) {
+  if (!videoId) return;
+  player.src = `${config.UI}watch?v=${videoId}&autoplay=1`;
+  location.hash = videoId; // Watch Together sync
 }
 
-// Update URL hash for Watch Together
-function updateHash(videoId, time = 0) {
-    history.replaceState(null, '', `#${videoId}@${Math.floor(time)}`);
+/* Load search UI */
+function doSearch(q) {
+  search.src = `${config.UI}search?q=${encodeURIComponent(q)}`;
 }
 
-// Load video from URL hash
-function loadFromHash() {
-    const hash = location.hash.substring(1);
-    if(!hash) return;
-    const [vid, t] = hash.split('@');
-    if(!vid) return;
-    createPlayer(vid, parseInt(t) || 0);
-}
+/* Handle button */
+button.onclick = () => {
+  const value = input.value.trim();
+  if (!value) return;
 
-playButton.onclick = () => {
-    const input = videoInput.value.trim();
-    if(!input) return alert('Paste a video URL or ID');
-    const vid = extractVideoID(input);
-    createPlayer(vid);
-    updateHash(vid, 0);
+  const vid = extractID(value);
+  if (vid.length >= 8) {
+    play(vid);
+  } else {
+    doSearch(value);
+  }
 };
 
-// Optional: periodically save timestamp (cannot read video time cross-origin)
-setInterval(() => {
-    const iframe = playerContainer.querySelector('iframe');
-    if(!iframe) return;
-    try {
-        const videoId = extractVideoID(iframe.src);
-        updateHash(videoId, 0);
-    } catch(e) {}
-}, 5000);
+/* Watch Together via URL hash */
+function loadFromHash() {
+  const vid = location.hash.replace('#', '');
+  if (vid) play(vid);
+}
 
+window.addEventListener('hashchange', loadFromHash);
 loadFromHash();
 </script>
+
 </body>
 </html>
