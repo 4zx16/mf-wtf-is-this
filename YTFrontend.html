@@ -21,8 +21,8 @@ iframe{width:95%;height:50vh;margin:1rem auto;display:block;border:none;border-r
 <h2>Watch Together</h2>
 <div>
 <input id="videoInput" placeholder="Paste YouTube/Invidious URL or ID">
-<button onclick="addVideo()">Add</button>
-<button onclick="nextVideo()">Next</button>
+<button id="addBtn">Add</button>
+<button id="nextBtn">Next</button>
 </div>
 <div id="queue"></div>
 <iframe id="player" allowfullscreen allow="autoplay" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
@@ -31,16 +31,14 @@ iframe{width:95%;height:50vh;margin:1rem auto;display:block;border:none;border-r
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 const EMBED="https://invidious.nerdvpn.de/watch/";
-const queueDiv=document.getElementById("queue"),
-      player=document.getElementById("player"),
-      input=document.getElementById("videoInput");
-
+const qDiv=document.getElementById("queue"), player=document.getElementById("player"), input=document.getElementById("videoInput");
 let queue=[], current=-1;
 
-// ===== SESSION PARAM =====
-let params=new URLSearchParams(window.location.search);
-let session=params.get("session");
-if(!session){session=Math.random().toString(36).substr(2,8);params.set("session",session);history.replaceState(null,null,"?"+params.toString());}
+// ===== SESSION =====
+const params=new URLSearchParams(location.search);
+let session=params.get("session")||Math.random().toString(36).slice(2,10);
+params.set("session",session);
+history.replaceState(null,null,"?"+params.toString());
 
 // ===== HELPERS =====
 const extractID=url=>{
@@ -53,71 +51,39 @@ const extractID=url=>{
   }catch(e){return url.trim();}
 };
 
-const renderQueue=()=>{
-  queueDiv.innerHTML="";
-  queue.forEach((v,i)=>{
-    const d=document.createElement("div");
-    d.className="queue-item";
-    d.innerHTML=`<span>${i+1}. ${v}</span><span class="queue-remove" onclick="removeVideo(${i})">✕</span>`;
-    d.onclick=()=>playVideo(i);
-    queueDiv.appendChild(d);
-  });
-};
+const renderQueue=()=>{qDiv.innerHTML="";queue.forEach((v,i)=>{const d=document.createElement("div");d.className="queue-item";d.innerHTML=`<span>${i+1}. ${v}</span><span class="queue-remove">✕</span>`;d.onclick=()=>playVideo(i);d.querySelector(".queue-remove").onclick=e=>{e.stopPropagation();removeVideo(i)};qDiv.appendChild(d);});};
 
 // ===== QUEUE CONTROLS =====
 const addVideo=()=>{
-  const id=extractID(input.value.trim());
-  if(!id) return;
-  queue.push(id);
-  renderQueue();
-  broadcast({type:"queue",payload:id});
-  if(current===-1) playVideo(0);
-  input.value="";
+  const id=extractID(input.value.trim());if(!id)return;
+  queue.push(id);renderQueue();broadcast({type:"queue",payload:id});if(current===-1)playVideo(0);input.value="";
 };
-
 const removeVideo=i=>{
-  if(i<0||i>=queue.length) return;
-  queue.splice(i,1);
-  renderQueue();
-  broadcast({type:"remove",payload:i});
-  if(current>=queue.length) current=queue.length-1;
-  if(current>=0) playVideo(current);
+  if(i<0||i>=queue.length)return;
+  queue.splice(i,1);renderQueue();broadcast({type:"remove",payload:i});
+  if(current>=queue.length)current=queue.length-1;
+  if(current>=0)playVideo(current);
 };
 
 // ===== VIDEO PLAYBACK =====
-const playVideo=i=>{
-  if(i<0||i>=queue.length) return;
-  current=i;
-  player.src=EMBED+queue[i]+"?autoplay=1";
-};
+const playVideo=i=>{if(i<0||i>=queue.length)return;current=i;player.src=EMBED+queue[i]+"?autoplay=1";};
+const nextVideo=()=>{if(queue.length===0)return;current=(current+1)%queue.length;playVideo(current);};
 
-const nextVideo=()=>{
-  if(queue.length==0) return;
-  current=(current+1)%queue.length;
-  playVideo(current);
-};
-
-// ===== PEERJS SESSION SYNC =====
+// ===== PEERJS SYNC =====
 const peer=new Peer(`peer-${session}-${Math.floor(Math.random()*1e4)}`,{host:"0.peerjs.com",secure:true,port:443});
 let conn;
 peer.on("open",id=>{
   const hostID=`host-${session}`;
-  if(id===hostID) peer.on("connection",c=>c.on("data",handleMsg));
+  if(id===hostID)peer.on("connection",c=>c.on("data",handleMsg));
   else{conn=peer.connect(hostID);conn.on("open",()=>console.log("Connected"));conn.on("data",handleMsg);}
 });
-
 const broadcast=msg=>{if(conn&&conn.open)conn.send(msg);};
-const handleMsg=msg=>{
-  const{type,payload}=msg;
-  switch(type){
-    case"queue": queue.push(payload); renderQueue(); break;
-    case"remove": queue.splice(payload,1); renderQueue(); break;
-    case"play": playVideo(payload); break;
-  }
-};
+const handleMsg=({type,payload})=>{switch(type){case"queue":queue.push(payload);renderQueue();break;case"remove":queue.splice(payload,1);renderQueue();break;case"play":playVideo(payload);break;}};
 
 // ===== EVENTS =====
-input.addEventListener("keypress",e=>{if(e.key==="Enter") addVideo();});
+input.addEventListener("keypress",e=>{if(e.key==="Enter")addVideo();});
+document.getElementById("addBtn").onclick=addVideo;
+document.getElementById("nextBtn").onclick=nextVideo;
 player.addEventListener("ended",nextVideo);
 </script>
 </body>
