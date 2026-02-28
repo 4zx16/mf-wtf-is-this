@@ -3,6 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LibreWatch</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #111;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+  }
+  #player {
+    width: 640px;
+    max-width: 95vw;
+    height: 360px;
+    margin-top: 1rem;
+  }
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 12px;
+  }
+  input, button {
+    padding: 0.5rem;
+    margin: 0.25rem;
+    font-size: 1rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>LibreWatch</h1>
+
+<div>
+  <input id="videoInput" placeholder="YouTube URL or Video ID"
+         value="dQw4w9WgXcQ">
+  <button id="loadBtn">Load</button>
+</div>
+
+<div id="player"></div>
+
+<script type="module">
+
+const videoInput = document.getElementById("videoInput");
+const loadBtn = document.getElementById("loadBtn");
+const playerContainer = document.getElementById("player");
+
+/* Extract clean video ID */
+function extractVideoID(input) {
+  try {
+    if (input.includes("youtube.com") || input.includes("youtu.be")) {
+      const url = new URL(input);
+      return url.searchParams.get("v") || url.pathname.split("/").pop();
+    }
+    return input.trim();
+  } catch {
+    return input.trim();
+  }
+}
+
+/* Fetch SponsorBlock segments */
+async function getSponsorSegments(videoId) {
+  try {
+    const res = await fetch(
+      `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.sort((a,b) => a.segment[0] - b.segment[0]);
+  } catch {
+    return [];
+  }
+}
+
+/* Create iframe player using youtube-nocookie.com */
+function createPlayer(videoId, startTime = 0) {
+  playerContainer.innerHTML = "";
+  const iframe = document.createElement("iframe");
+
+  iframe.src =
+    `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&start=${Math.floor(startTime)}&rel=0&modestbranding=1`;
+  
+  iframe.allow = "autoplay; encrypted-media; fullscreen";
+  iframe.allowFullscreen = true;
+  iframe.style.border = "none";
+  iframe.style.borderRadius = "12px";
+
+  playerContainer.appendChild(iframe);
+}
+
+/* Main load function */
+async function loadVideo() {
+  const videoId = extractVideoID(videoInput.value);
+
+  if (!videoId) return alert("Enter a valid video ID or URL.");
+
+  const segments = await getSponsorSegments(videoId);
+
+  // Skip intro if first segment starts at 0
+  let startTime = 0;
+  if (segments.length && segments[0].segment[0] === 0) {
+    startTime = segments[0].segment[1];
+  }
+
+  createPlayer(videoId, startTime);
+  console.log("SponsorBlock segments:", segments);
+}
+
+loadBtn.addEventListener("click", loadVideo);
+window.addEventListener("DOMContentLoaded", loadVideo);
+
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LibreWatch Embed Player</title>
 <style>
   body {
