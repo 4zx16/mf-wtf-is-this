@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LibreWatch Embed</title>
+<title>LibreWatch Embed Player</title>
 <style>
   body {
     font-family: sans-serif;
@@ -35,30 +35,33 @@
 </head>
 <body>
 
-<h1>LibreWatch Embed</h1>
+<h1>LibreWatch</h1>
 
 <div>
   <select id="endpoint">
-    <option value="https://piped.video/embed/">Piped</option>
-    <option value="https://pipedapi.frontendfriendly.xyz/embed/">Piped FrontendPrivacy</option>
-    <option value="https://pipedapi.kavin.rocks/embed/">Piped kavin.rocks</option>
-    <option value="https://inv.nadeko.net/embed/">Invidious Nadeko</option>
-    <option value="https://invidious.nerdvpn.de/embed/">Invidious NerdVPN</option>
+    <option value="https://piped.video/">Piped</option>
+    <option value="https://pipedapi.frontendfriendly.xyz/">Piped FrontendPrivacy</option>
+    <option value="https://pipedapi.kavin.rocks/">Piped kavin.rocks</option>
+    <option value="https://inv.nadeko.net/">Invidious Nadeko</option>
+    <option value="https://invidious.nerdvpn.de/">Invidious NerdVPN</option>
   </select>
 
-  <input id="videoInput" placeholder="YouTube URL or Video ID" value="dQw4w9WgXcQ">
+  <input id="videoInput" placeholder="YouTube URL or Video ID"
+         value="dQw4w9WgXcQ">
+
   <button id="loadBtn">Load</button>
 </div>
 
 <div id="player"></div>
 
 <script type="module">
+
 const endpointSelect = document.getElementById("endpoint");
 const videoInput = document.getElementById("videoInput");
 const loadBtn = document.getElementById("loadBtn");
 const playerContainer = document.getElementById("player");
 
-/* Extract YouTube video ID */
+/* Extract clean video ID */
 function extractVideoID(input) {
   try {
     if (input.includes("youtube.com") || input.includes("youtu.be")) {
@@ -71,10 +74,12 @@ function extractVideoID(input) {
   }
 }
 
-/* Fetch SponsorBlock segments (no proxy needed) */
+/* Fetch SponsorBlock segments */
 async function getSponsorSegments(videoId) {
   try {
-    const res = await fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`);
+    const res = await fetch(
+      `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`
+    );
     if (!res.ok) return [];
     const data = await res.json();
     return data.sort((a,b) => a.segment[0] - b.segment[0]);
@@ -83,32 +88,34 @@ async function getSponsorSegments(videoId) {
   }
 }
 
-/* Create iframe player */
+/* Create iframe player using /embed/VIDEOID */
 function createPlayer(endpoint, videoId, startTime = 0) {
   playerContainer.innerHTML = "";
   const iframe = document.createElement("iframe");
-  iframe.src = `${endpoint}${videoId}?autoplay=1&start=${Math.floor(startTime)}`;
-  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-  iframe.referrerPolicy = "no-referrer";
-  iframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
+
+  iframe.src =
+    `${endpoint.replace(/\/$/, "")}/embed/${videoId}` +
+    (startTime ? `?start=${Math.floor(startTime)}` : "?autoplay=1");
+
+  iframe.allow = "autoplay; encrypted-media; fullscreen";
+  iframe.allowFullscreen = true;
+  iframe.style.border = "none";
+  iframe.style.borderRadius = "12px";
+
   playerContainer.appendChild(iframe);
 }
 
 /* Main load function */
 async function loadVideo() {
-  const rawInput = videoInput.value;
-  const videoId = extractVideoID(rawInput);
+  const videoId = extractVideoID(videoInput.value);
   const endpoint = endpointSelect.value;
 
-  if (!videoId) {
-    alert("Enter a valid video ID or URL.");
-    return;
-  }
+  if (!videoId) return alert("Enter a valid video ID or URL.");
 
   const segments = await getSponsorSegments(videoId);
 
+  // Skip intro if first segment starts at 0
   let startTime = 0;
-  // Auto-skip intro if first segment starts at 0
   if (segments.length && segments[0].segment[0] === 0) {
     startTime = segments[0].segment[1];
   }
@@ -119,6 +126,7 @@ async function loadVideo() {
 
 loadBtn.addEventListener("click", loadVideo);
 window.addEventListener("DOMContentLoaded", loadVideo);
+
 </script>
 </body>
 </html>
