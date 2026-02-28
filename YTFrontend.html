@@ -3,133 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Watch Together - External Embeds</title>
+<title>LibreWatch Watch Together 🔗</title>
 <style>
-body{margin:0;padding:0;background:#111;color:#fff;font-family:sans-serif;}
-#container{max-width:900px;margin:auto;padding:1rem;}
-input,button{padding:.5rem;font-size:1rem;border-radius:5px;border:none;}
-button{background:#ff5c57;color:#fff;cursor:pointer;margin-left:.3rem;}
-#queue{margin-top:1rem;}
-.queue-item{padding:.4rem;background:#222;margin:.2rem 0;border-radius:4px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
-.queue-item:hover{background:#333;}
-.queue-remove{cursor:pointer;color:#ff5c57;margin-left:.3rem;}
-iframe{width:95%;height:50vh;margin:1rem auto;display:block;border:none;border-radius:8px;}
+  html, body { margin:0; padding:0; height:100%; background:#000; display:flex; justify-content:center; align-items:center; }
+  #player { width:80%; height:80%; border:none; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 </head>
 <body>
-<div id="container">
-<h2>Watch Together</h2>
-<div>
-<input id="videoInput" placeholder="Paste YouTube/Invidious URL or ID">
-<button id="addBtn">Add</button>
-<button id="nextBtn">Next</button>
-</div>
-<div id="queue"></div>
-<iframe id="player" allowfullscreen allow="autoplay" sandbox="allow-scripts allow-popups" referrerpolicy="no-referrer"></iframe>
-</div>
 
-<!-- PeerJS CDN -->
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<div id="player"></div>
 
 <script>
-const player=document.getElementById("player"),
-      queueDiv=document.getElementById("queue"),
-      input=document.getElementById("videoInput"),
-      addBtn=document.getElementById("addBtn"),
-      nextBtn=document.getElementById("nextBtn");
+(async () => {
+  const videoId = new URLSearchParams(window.location.search).get('v') || 'dQw4w9WgXcQ';
+  const platform = new URLSearchParams(window.location.search).get('p') || 'youtube';
+  let peer, connList = [];
 
-let queue=[], current=-1;
+  // ----- Player Setup -----
+  let player, pipedIframe;
 
-// SESSION PARAM
-let params=new URLSearchParams(location.search);
-let session=params.get("session")||Math.random().toString(36).slice(2,10);
-params.set("session",session);
-history.replaceState(null,null,"?"+params.toString());
-
-// HELPERS
-function extractID(url){
-  try{
-    let u=new URL(url);
-    if(u.hostname.includes("youtube.com")||u.hostname.includes("music.youtube.com")) return u.searchParams.get("v");
-    if(u.hostname=="youtu.be") return u.pathname.slice(1);
-    if(u.hostname.includes("invidious")||u.hostname.includes("piped")) return u.searchParams.get("v");
-    return url.trim();
-  }catch(e){return url.trim();}
-}
-
-// QUEUE
-function renderQueue(){
-  queueDiv.innerHTML="";
-  queue.forEach((v,i)=>{
-    const d=document.createElement("div");
-    d.className="queue-item";
-    d.innerHTML=`<span>${i+1}. ${v}</span><span class="queue-remove">✕</span>`;
-    d.onclick=()=>playVideo(i);
-    d.querySelector(".queue-remove").onclick=e=>{e.stopPropagation();removeVideo(i)};
-    queueDiv.appendChild(d);
-  });
-}
-
-function addVideo(){
-  const id=extractID(input.value.trim());
-  if(!id)return;
-  queue.push(id);
-  renderQueue();
-  broadcast({type:"queue",payload:id});
-  if(current===-1) playVideo(0);
-  input.value="";
-}
-
-function removeVideo(i){
-  if(i<0||i>=queue.length) return;
-  queue.splice(i,1);
-  renderQueue();
-  broadcast({type:"remove",payload:i});
-  if(current>=queue.length) current=queue.length-1;
-  if(current>=0) playVideo(current);
-}
-
-// VIDEO PLAYBACK
-function playVideo(i){
-  if(i<0||i>=queue.length) return;
-  current=i;
-  // Select an Invidious/Piped instance dynamically
-  const instance="https://piped.kavin.rocks/watch/"; 
-  player.src=instance+queue[i]+"?autoplay=1";
-}
-
-function nextVideo(){
-  if(queue.length===0) return;
-  current=(current+1)%queue.length;
-  playVideo(current);
-}
-
-// PEERJS SYNC
-const peer=new Peer(`peer-${session}-${Math.floor(Math.random()*1e4)}`,{host:"0.peerjs.com",secure:true,port:443});
-let conn;
-peer.on("open",id=>{
-  const hostID=`host-${session}`;
-  if(id===hostID) peer.on("connection",c=>c.on("data",handleMsg));
-  else{conn=peer.connect(hostID); conn.on("open",()=>console.log("Connected")); conn.on("data",handleMsg);}
-});
-
-function broadcast(msg){
-  if(conn&&conn.open) conn.send(msg);
-}
-
-function handleMsg({type,payload}){
-  switch(type){
-    case"queue": queue.push(payload); renderQueue(); break;
-    case"remove": queue.splice(payload,1); renderQueue(); break;
-    case"play": playVideo(payload); break;
+  function loadYouTube(videoId, start=0) {
+    player = new YT.Player('player', {
+      videoId,
+      playerVars: { autoplay: 1, start },
+      events: {
+        onStateChange: onYouTubeStateChange
+      }
+    });
   }
-}
 
-// EVENTS
-input.addEventListener("keypress",e=>{if(e.key==="Enter") addVideo();});
-addBtn.onclick=addVideo;
-nextBtn.onclick=nextVideo;
-player.addEventListener("ended",nextVideo);
+  function loadPiped(videoId, start=0) {
+    pipedIframe = document.createElement('iframe');
+    pipedIframe.id = 'player';
+    pipedIframe.src = `https://piped.video/embed/${videoId}?autoplay=1&t=${start}`;
+    pipedIframe.sandbox = "allow-scripts allow-same-origin allow-presentation";
+    pipedIframe.width = "100%";
+    pipedIframe.height = "100%";
+    document.body.innerHTML = '';
+    document.body.appendChild(pipedIframe);
+  }
+
+  // ----- PeerJS Setup -----
+  peer = new Peer(undefined, { host: 'peerjs.com', port: 443, secure: true });
+  const roomId = `${platform}_${videoId}`;
+
+  peer.on('open', id => {
+    console.log('PeerJS connected:', id);
+    // For simplicity, we broadcast to everyone in the room manually (replace with proper signaling in production)
+  });
+
+  peer.on('connection', conn => {
+    connList.push(conn);
+    conn.on('data', handleMessage);
+  });
+
+  function connectToPeer(pid) {
+    const c = peer.connect(pid);
+    c.on('open', () => connList.push(c));
+    c.on('data', handleMessage);
+  }
+
+  // ----- Messaging -----
+  function handleMessage(msg) {
+    if(msg.type === 'sync') {
+      if(platform === 'youtube' && player && player.getPlayerState() !== YT.PlayerState.PLAYING) {
+        player.seekTo(msg.time, true);
+        player.playVideo();
+      } else if(platform === 'piped' && pipedIframe) {
+        pipedIframe.src = `https://piped.video/embed/${videoId}?autoplay=1&t=${msg.time}`;
+      }
+    }
+  }
+
+  function broadcastSync(time) {
+    connList.forEach(c => { if(c.open) c.send({type:'sync', time}); });
+  }
+
+  // ----- YouTube API state listener -----
+  function onYouTubeStateChange(event) {
+    if(event.data === YT.PlayerState.PLAYING) {
+      setInterval(() => {
+        const t = Math.floor(player.getCurrentTime());
+        broadcastSync(t);
+      }, 2000);
+    }
+  }
+
+  // ----- Initial load -----
+  if(platform === 'youtube') loadYouTube(videoId);
+  else loadPiped(videoId);
+
+})();
 </script>
 </body>
 </html>
