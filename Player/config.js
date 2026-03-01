@@ -1,5 +1,5 @@
-// config.js
-export const config = {
+// Player/config.js
+var config = {
   Player: {
     UI: {
       default: "https://www.youtube-nocookie.com/embed/",
@@ -18,32 +18,30 @@ export const config = {
     Misc: {
       sponsorBlock: {
         API: "https://sponsor.ajay.app/",
-        //KEY: "",
         config: {
-        Categories: {
-        sponsor: "skip",            // Paid promotions
-        selfpromo: "skip",          // "Check out my channel"
-        interaction: "skip",        // "Like and subscribe"
-        intro: "skip",              // Long intros
-        outro: "skip",              // Outros/end screens
-        preview: "skip",            // Preview recaps
-        filler: "skip",             // Filler content
-        //music_offtopic: "mute",     // Off-topic music
-        poi_highlight: "none"       // Highlight only
-        },
-      AutoSkip: true,
-      SkipThreshold: 0, // skip immediately
-      ShowToast: false
+          Categories: {
+            sponsor: "skip",
+            selfpromo: "skip",
+            interaction: "skip",
+            intro: "skip",
+            outro: "skip",
+            preview: "skip",
+            filler: "skip",
+            poi_highlight: "none"
+          },
+          AutoSkip: true,
+          SkipThreshold: 0,
+          ShowToast: false
         }
       },
       dearrow: {
         API: "https://dearrow.ajay.app/",
         KEY: "FR3Lo-e986a",
         config: {
-        ReplaceTitles: true,
-        ReplaceThumbnails: true,
-        FallbackToOriginal: true,
-        PreferOriginalIfNoVotes: true
+          ReplaceTitles: true,
+          ReplaceThumbnails: true,
+          FallbackToOriginal: true,
+          PreferOriginalIfNoVotes: true
         }
       }
     },
@@ -56,14 +54,11 @@ export const config = {
     APIs: {
       Indivious: {
         "Kavin.rocks API": "https://invidious.kavin.rocks/api/v1/"
-        // May not use APIs
       },
-      Piped: {
-        // Not sure if I'm going to use APIs on this
-      },
+      Piped: {},
       Google: {
         API_KEY: ""
-      } // Not used, may never be used, who knows.
+      }
     }
   }
 };
