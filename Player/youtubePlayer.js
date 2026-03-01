@@ -4,14 +4,19 @@ let currentSegments = [];
 let sponsorWatcher = null;
 
 async function loadConfig() {
-  const raw = await fetch('./Player/config.js', { cache: 'no-store' }).then(r => r.text());
-  const sandbox = {};
-  new Function('sandbox', `
-    let config;
-    ${raw}
-    if(typeof config !== "undefined") sandbox.config = config;
-  `)(sandbox);
-  return Object.freeze(sandbox.config.Player.Misc);
+  try {
+    const raw = await fetch('/LibreWatch/Player/config.js', { cache: 'no-store' }).then(r => r.text());
+    const sandbox = {};
+    new Function('sandbox', `
+      let config;
+      ${raw}
+      if(typeof config !== "undefined") sandbox.config = config;
+    `)(sandbox);
+    return Object.freeze(sandbox.config.Player.Misc);
+  } catch(e) {
+    console.error('Failed to load config:', e);
+    return {};
+  }
 }
 
 export async function createYouTubePlayer(containerId, videoId, options = {}) {
