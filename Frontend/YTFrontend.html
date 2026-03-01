@@ -11,7 +11,28 @@ input,button{padding:.5rem;margin:.25rem;font-size:1rem}
 </style>
 </head>
 <body>
-<!-- Correct path to youtubePlayer.js -->
-<script type="module" src="../Player/youtubePlayer.js"></script>
+
+<h1>LibreWatch</h1>
+<div>
+  <input id="videoInput" value="dQw4w9WgXcQ">
+  <button id="loadBtn">Load</button>
+</div>
+<div id="player"></div>
+
+<script type="module">
+import { createYouTubePlayer, destroyPlayer } from '../Player/youtubePlayer.js';
+
+const input = document.getElementById('videoInput');
+const btn = document.getElementById('loadBtn');
+
+btn.addEventListener('click', async () => {
+  const id = input.value.trim();
+  if (!id) return alert('Invalid video ID');
+
+  destroyPlayer();
+  await createYouTubePlayer('player', id, { autoplay: 1 });
+});
+</script>
+
 </body>
 </html>
