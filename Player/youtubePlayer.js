@@ -1,8 +1,19 @@
-// plain JS, GitHub Pages-safe, minimal
+// plain JS, window-based, JSON-config friendly
 window.LibreWatchPlayer = (() => {
   let currentPlayer = null;
   let sponsorSegments = [];
   let sponsorInterval = null;
+  let CFG = null;
+
+  async function loadConfig() {
+    if (CFG) return CFG; // already loaded
+    try {
+      const res = await fetch('/LibreWatch/Player/config.json', { cache: 'no-store' });
+      const json = await res.json();
+      CFG = json.Player.Misc;
+      return CFG;
+    } catch(e) { console.error('Failed to load config:', e); return null; }
+  }
 
   function clearPlayer() {
     if (sponsorInterval) clearInterval(sponsorInterval);
@@ -23,29 +34,33 @@ window.LibreWatchPlayer = (() => {
     }, 300);
   }
 
+  async function loadCore() {
+    if (window.LibreUltra) return;
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/LibreWatch/Player/playerCore.js';
+      s.async = true;
+      s.onload = () => window.LibreUltra ? resolve() : reject('LibreUltra failed');
+      s.onerror = () => reject('Failed to load playerCore.js');
+      document.head.appendChild(s);
+    });
+  }
+
   async function create(containerId, videoId, options = {}) {
     if (!videoId) return console.error('Invalid video ID');
     const container = document.getElementById(containerId);
     if (!container) return console.error('Container not found');
-    const CFG = window.LibreWatchConfig?.Player?.Misc;
-    if (!CFG) return console.error('Config missing');
 
-    // Load LibreUltra if not already
-    if (!window.LibreUltra) {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = '/LibreWatch/Player/playerCore.js';
-        s.onload = () => window.LibreUltra ? resolve() : reject('LibreUltra failed');
-        s.onerror = () => reject('Failed to load playerCore.js');
-        document.head.appendChild(s);
-      }).catch(e => { console.error(e); return; });
-    }
+    const config = await loadConfig();
+    if (!config) return;
+
+    try { await loadCore(); } catch(e){ console.error(e); return; }
 
     clearPlayer();
 
     const autoplay = options.autoplay ? 1 : 0;
     const iframe = document.createElement('iframe');
-    const baseURL = window.LibreWatchConfig?.Player?.UI?.default || 'https://www.youtube-nocookie.com/embed/';
+    const baseURL = json.Player.UI.default || 'https://www.youtube-nocookie.com/embed/';
     iframe.src = `${baseURL}${videoId}?autoplay=${autoplay}&rel=0&modestbranding=1&enablejsapi=1`;
     iframe.width = options.width || '640';
     iframe.height = options.height || '360';
@@ -60,12 +75,12 @@ window.LibreWatchPlayer = (() => {
 
     try {
       sponsorSegments = (await window.LibreUltra.sponsor(videoId)) || [];
-      sponsorSegments.sort((a, b) => a.segment[0] - b.segment[0]);
+      sponsorSegments.sort((a,b) => a.segment[0]-b.segment[0]);
     } catch { sponsorSegments = []; }
 
     startSponsorWatcher(iframe);
 
-    if (CFG.dearrow?.KEY) window.LibreUltra.prefetch(videoId);
+    if (config.dearrow?.KEY) window.LibreUltra.prefetch(videoId);
 
     return iframe;
   }
