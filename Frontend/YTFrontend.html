@@ -20,7 +20,8 @@ input, button { padding: .5rem; margin: .25rem; font-size: 1rem; }
 <div id="player"></div>
 
 <script type="module">
-  import { createYouTubePlayer } from '../Player/youtubePlayer.js';
+  // Use absolute repo path from GitHub Pages root
+  import { createYouTubePlayer } from '/LibreWatch/Player/youtubePlayer.js';
 
   const input = document.getElementById('videoInput');
   const btn = document.getElementById('loadBtn');
