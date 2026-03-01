@@ -4,8 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LibreWatch</title>
+<style>
+body{font-family:sans-serif;background:#111;color:#eee;display:flex;flex-direction:column;align-items:center;padding:2rem}
+#player{width:640px;max-width:95vw;height:360px;margin-top:1rem}
+input,button{padding:.5rem;margin:.25rem;font-size:1rem}
+</style>
 </head>
 <body>
-<script type="module" src="./Player/youtubePlayer.js"></script>
+
+<h1>LibreWatch</h1>
+
+<div>
+  <input id="videoInput" value="dQw4w9WgXcQ">
+  <button id="loadBtn">Load</button>
+</div>
+
+<div id="player"></div>
+
+<!-- Correct path to youtubePlayer.js -->
+<script type="module" src="../Player/youtubePlayer.js"></script>
+
 </body>
 </html>
