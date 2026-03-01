@@ -1,16 +1,16 @@
 // Player/youtubePlayer.js
-// Production-ready, GitHub Pages compatible
+// Minimal, efficient, async/await, GitHub Pages safe
 
 window.LibreWatchPlayer = (() => {
-  let currentPlayer=null;
-  let sponsorSegments=[];
-  let sponsorInterval=null;
+  let currentPlayer = null;
+  let sponsorSegments = [];
+  let sponsorInterval = null;
 
   async function loadConfig() {
     try {
-      const raw = await fetch('/LibreWatch/Player/config.js', {cache:'no-store'}).then(r=>r.text());
-      // eval config safely into window
+      const raw = await fetch('/LibreWatch/Player/config.js', { cache:'no-store' }).then(r=>r.text());
       window.LibreWatchConfig = {};
+      // safely eval config into global
       new Function(`${raw}; window.LibreWatchConfig = config.Player.Misc;`)();
       return Object.freeze(window.LibreWatchConfig);
     } catch(e){ console.error('Failed to load config:', e); return null; }
@@ -18,36 +18,36 @@ window.LibreWatchPlayer = (() => {
 
   async function loadCore() {
     if(window.LibreUltra) return;
-    return new Promise((resolve,reject)=>{
-      const s=document.createElement('script');
-      s.src='/LibreWatch/Player/playerCore.js';
-      s.async=true;
-      s.onload=()=>window.LibreUltra?resolve():reject('LibreUltra failed');
-      s.onerror=()=>reject('Failed to load playerCore.js');
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = '/LibreWatch/Player/playerCore.js';
+      s.async = true;
+      s.onload = () => window.LibreUltra ? resolve() : reject('LibreUltra failed');
+      s.onerror = () => reject('Failed to load playerCore.js');
       document.head.appendChild(s);
     });
   }
 
   function clearPlayer() {
     if(sponsorInterval) clearInterval(sponsorInterval);
-    if(currentPlayer){ currentPlayer.remove(); currentPlayer=null; }
-    sponsorSegments=[];
+    if(currentPlayer) { currentPlayer.remove(); currentPlayer = null; }
+    sponsorSegments = [];
   }
 
   function startSponsorWatcher(iframe) {
     const ytPlayer = iframe.contentWindow?.YT?.getPlayers?.()?.[0];
     if(!ytPlayer) return;
-    sponsorInterval = setInterval(()=>{
-      const t=ytPlayer.getCurrentTime?.();
+    sponsorInterval = setInterval(() => {
+      const t = ytPlayer.getCurrentTime?.();
       if(!t) return;
       for(const seg of sponsorSegments){
         const [start,end] = seg.segment;
-        if(t>=start && t<end){ ytPlayer.seekTo(end,true); break; }
+        if(t >= start && t < end){ ytPlayer.seekTo(end,true); break; }
       }
-    },300);
+    }, 300);
   }
 
-  async function create(containerId, videoId, options={}) {
+  async function create(containerId, videoId, options = {}) {
     if(!videoId) return console.error('Invalid video ID');
     const container = document.getElementById(containerId);
     if(!container) return console.error('Container not found');
@@ -59,25 +59,25 @@ window.LibreWatchPlayer = (() => {
 
     clearPlayer();
 
-    const autoplay = options.autoplay?1:0;
-    const iframe=document.createElement('iframe');
+    const autoplay = options.autoplay ? 1 : 0;
+    const iframe = document.createElement('iframe');
     const baseURL = CFG.UI.default || 'https://www.youtube-nocookie.com/embed/';
     iframe.src = `${baseURL}${videoId}?autoplay=${autoplay}&rel=0&modestbranding=1&enablejsapi=1`;
-    iframe.width = options.width||'640';
-    iframe.height = options.height||'360';
-    iframe.frameBorder='0';
-    iframe.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-    iframe.allowFullscreen=true;
-    iframe.referrerPolicy='no-referrer';
-    iframe.title='YouTube (Privacy-first) Player';
-    iframe.style.cssText='border-radius:12px;border:none;overflow:hidden;';
+    iframe.width = options.width || '640';
+    iframe.height = options.height || '360';
+    iframe.frameBorder = '0';
+    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = 'no-referrer';
+    iframe.title = 'YouTube (Privacy-first) Player';
+    iframe.style.cssText = 'border-radius:12px;border:none;overflow:hidden;';
     container.appendChild(iframe);
     currentPlayer = iframe;
 
     try {
-      sponsorSegments = (await window.LibreUltra.sponsor(videoId))||[];
-      sponsorSegments.sort((a,b)=>a.segment[0]-b.segment[0]);
-    } catch { sponsorSegments=[]; }
+      sponsorSegments = (await window.LibreUltra.sponsor(videoId)) || [];
+      sponsorSegments.sort((a,b) => a.segment[0] - b.segment[0]);
+    } catch { sponsorSegments = []; }
 
     startSponsorWatcher(iframe);
 
