@@ -7,7 +7,7 @@ let sponsorInterval = null;
 
 async function loadConfig() {
   try {
-    const raw = await fetch('./Player/config.js', { cache: 'no-store' }).then(r => r.text());
+    const raw = await fetch('/LibreWatch/Player/config.js', { cache: 'no-store' }).then(r => r.text());
     const sandbox = {};
     // Evaluate the exported config safely
     new Function('sandbox', `
@@ -25,7 +25,7 @@ async function loadCore(CFG) {
   if (!window.LibreUltra) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = './Player/playerCore.js';
+      script.src = '/LibreWatch/Player/playerCore.js';
       script.async = true;
       script.onload = () => {
         if (!window.LibreUltra) reject('LibreUltra failed to initialize');
