@@ -30,7 +30,7 @@ export async function createYouTubePlayer(containerId, videoId, options = {}) {
   // Load LibreUltra player core if not loaded
   if (!window.LibreUltra) {
     const script = document.createElement('script');
-    script.src = './playerCore.js';
+    script.src = '/LibreWatch/Player/playerCore.js';
     script.async = true;
     document.head.appendChild(script);
     await new Promise(resolve => script.onload = resolve);
