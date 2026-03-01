@@ -19,15 +19,21 @@ input, button { padding: .5rem; margin: .25rem; font-size: 1rem; }
 </div>
 <div id="player"></div>
 
+<div>
+  <input id="videoInput" value="dQw4w9WgXcQ">
+  <button id="loadBtn">Load</button>
+</div>
+<div id="player"></div>
+
 <script src="/LibreWatch/Player/youtubePlayer.js"></script>
 <script>
   const btn = document.getElementById('loadBtn');
   const input = document.getElementById('videoInput');
 
-  btn.addEventListener('click', async ()=>{
+  btn.addEventListener('click', async () => {
     const id = input.value.trim();
     if(!id) return alert('Invalid video ID');
-    await window.LibreWatchPlayer.create('player', id, {autoplay:1});
+    await window.LibreWatchPlayer.create('player', id, { autoplay: 1 });
   });
 </script>
 
