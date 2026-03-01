@@ -7,7 +7,7 @@ let sponsorInterval=null;
 
 async function loadConfig() {
   try {
-    const raw = await fetch('/LibreWatch/Player/config.js', { cache:'no-store' }).then(r=>r.text());
+    const raw = await fetch('/LibreWatch/Player/config.json', { cache:'no-store' }).then(r=>r.text());
     const sandbox={};
     new Function('sandbox', `${raw}; sandbox.config=config.Player.Misc;`)(sandbox);
     return Object.freeze(sandbox.config);
