@@ -14,28 +14,24 @@ input, button { padding: .5rem; margin: .25rem; font-size: 1rem; }
 
 <h1>LibreWatch</h1>
 <div>
-  <input class="videoInput" value="dQw4w9WgXcQ">
-  <button class="loadBtn">Load</button>
-  <div class="player"></div>
+  <input id="videoInput" value="dQw4w9WgXcQ">
+  <button id="loadBtn">Load</button>
 </div>
-
-<div>
-  <input class="videoInput" value="dQw4w9WgXcQ">
-  <button class="loadBtn">Load</button>
-  <div class="player"></div>
-</div>
+<div id="player"></div>
 
 <script src="/LibreWatch/Player/youtubePlayer.js"></script>
 <script>
-  document.querySelectorAll('.loadBtn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const container = btn.nextElementSibling; // assumes div.player right after button
-      const input = btn.previousElementSibling;
-      const id = input.value.trim();
-      if(!id) return alert('Invalid video ID');
-      await window.LibreWatchPlayer.create(container, id, { autoplay: 1 });
-    });
-  });
+const btn = document.getElementById('loadBtn');
+const input = document.getElementById('videoInput');
+
+btn.addEventListener('click', async () => {
+  const id = input.value.trim();
+  if(!id) return alert('Invalid video ID');
+
+  // always single player
+  await window.LibreWatchPlayer.create('player', id, { autoplay: 1 });
+});
 </script>
+
 </body>
 </html>
