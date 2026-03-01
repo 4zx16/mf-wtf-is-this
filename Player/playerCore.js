@@ -32,7 +32,7 @@
   ========================== */
 
   const loadConfig = async () => {
-    const raw = await fetch("./Player/config.js", { cache: "no-store" }).then(r => r.text());
+    const raw = await fetch("/LibreWatch/Player/config.js", { cache: "no-store" }).then(r => r.text());
     const sandbox = {};
     new Function("sandbox", `
       let config;
